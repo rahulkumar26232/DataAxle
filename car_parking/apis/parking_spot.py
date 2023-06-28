@@ -12,7 +12,7 @@ from car_parking.models import ParkingSpot, ParkingReservation
 from car_parking.serializer import ParkingSpotSerializer, ReserveParkingSpotInput, ParkingReservationSerializer
 
 
-class ParkingSpotFetchApi(ListModelMixin,viewsets.GenericViewSet):
+class ParkingSpotFetchApi(ListModelMixin, viewsets.GenericViewSet):
     serializer_class = ParkingSpotSerializer
 
     def get_queryset(self):
@@ -42,34 +42,32 @@ class ReserveParkingSpotApi(APIView):
 
         parking_spot_id = request.data.get('parking_spot_id', None)
         hours = request.data['hours']
-        user_id= request.user.id
+        user_id = request.user.id
 
         try:
-            spot = ParkingSpot.objects.get(id=parking_spot_id,is_available=True)
+            spot = ParkingSpot.objects.get(id=parking_spot_id, is_available=True)
         except ParkingSpot.DoesNotExist:
             return Response({
-            'status': 'failure', 'message': 'parking spot is not available'
-            , "payload": {}
-        })
+                'status': 'failure', 'message': 'parking spot is not available'
+                , "payload": {}
+            })
 
-        spot.is_available=False
+        spot.is_available = False
         spot.save()
 
-        ParkingReservation.objects.create(user_id=user_id,parking_spot_id=spot.id,reserve_for_hours=hours)
-
+        ParkingReservation.objects.create(user_id=user_id, parking_spot_id=spot.id, reserve_for_hours=hours)
 
         return Response({
             'status': 'success', 'message': 'spot reserved successfully'
-            , "payload": {'price': spot.per_hour_rate*hours}
+            , "payload": {'price': spot.per_hour_rate * hours}
         })
 
 
-class ReservedParkingHistoryApi(ListModelMixin,viewsets.GenericViewSet):
+class ReservedParkingHistoryApi(ListModelMixin, viewsets.GenericViewSet):
     serializer_class = ParkingReservationSerializer
 
     authentication_classes = [BasicAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-
         return ParkingReservation.objects.filter(user_id=self.request.user.pk).select_related("parking_spot")
